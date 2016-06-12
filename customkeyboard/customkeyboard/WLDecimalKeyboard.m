@@ -425,14 +425,15 @@ static UIImage *wldk_keyboard_icon()
         if (![self.firstResponder conformsToProtocol:@protocol(UIKeyInput)]) return;
     }
     
-    
     switch (sender.tag) {
         case 46:
             [self.firstResponder insertText:@"."];
             break;
             
         case 127:
-            [self.firstResponder deleteBackward];
+            if ([self.firstResponder hasText]) {
+                [self.firstResponder deleteBackward];
+            }
             break;
             
         case -1:
