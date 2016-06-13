@@ -274,6 +274,9 @@ static UIImage *wldk_keyboard_icon()
 
 
 @interface WLDecimalKeyboard () <UIInputViewAudioFeedback>
+{
+    NSTimer *deleteTimer;
+}
 
 @property (weak, nonatomic) UIView<UIKeyInput> *firstResponder;
 
@@ -286,7 +289,8 @@ static UIImage *wldk_keyboard_icon()
 #pragma mark - Lifecycle
 
 - (void)dealloc {
-    NSLog(@"***> %@", self);
+    [self _cleanTimer];
+    NSLog(@"***> %s", __func__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -314,6 +318,13 @@ static UIImage *wldk_keyboard_icon()
 
 #pragma mark - Private
 
+- (void)_cleanTimer
+{
+    [deleteTimer invalidate];
+    deleteTimer = nil;
+    NSLog(@"***> %s", __func__);
+}
+
 - (void)_initUI
 {
     self.backgroundColor = [UIColor colorWithRed:204 / 255.f
@@ -337,6 +348,9 @@ static UIImage *wldk_keyboard_icon()
         else if (i == 11) {
             item.tag = 127;
             [item setImage:wldk_delete_icon() forState:UIControlStateNormal];
+            UILongPressGestureRecognizer *g = [[UILongPressGestureRecognizer alloc] initWithTarget:self
+                                                                                            action:@selector(deleteItemLongPress:)];
+            [item addGestureRecognizer:g];
         }
         else if (i == 12) {
             item.tag = -1;
@@ -537,6 +551,26 @@ static UIImage *wldk_keyboard_icon()
     [self _handleInputWithKeyboardItemTag:sender.tag];
 }
 
+- (void)deleteItemLongPress:(UILongPressGestureRecognizer *)longPress
+{
+    if (longPress.state == UIGestureRecognizerStateBegan) {
+        deleteTimer = [NSTimer scheduledTimerWithTimeInterval:.1
+                                                       target:self
+                                                     selector:@selector(_repeatLongPressDelete)
+                                                     userInfo:nil
+                                                      repeats:YES];
+    }
+    else if (longPress.state == UIGestureRecognizerStateEnded
+             || longPress.state == UIGestureRecognizerStateCancelled
+             || longPress.state == UIGestureRecognizerStateFailed) {
+        [self _cleanTimer];
+    }
+}
+
+- (void)_repeatLongPressDelete
+{
+    [(UIControl *)[self viewWithTag:127] sendActionsForControlEvents:UIControlEventTouchUpInside];
+}
 
 #pragma mark - UIInputViewAudioFeedback
 
