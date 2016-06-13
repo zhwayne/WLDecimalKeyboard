@@ -20,18 +20,16 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
     
+    WLDecimalKeyboard *inputView = [[WLDecimalKeyboard alloc] init];
+    
     self.textField.delegate = self;
-    self.textField.inputView = [[WLDecimalKeyboard alloc] init];
+    self.textField.inputView = inputView;
     [self.textField reloadInputViews];
-}
-
-- (IBAction)editChanged:(UITextField *)sender {
-    NSLog(@"%@", sender);
 }
 
 /// 设置自定义键盘后，delegate 不会被调用？
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
-    if ([string isEqualToString:@"8"]) return NO;
+    NSLog(@"%@", [textField.text stringByReplacingCharactersInRange:range withString:string]);
     
     return YES;
 }

@@ -273,7 +273,7 @@ static UIImage *wldk_keyboard_icon()
 
 
 
-@interface WLDecimalKeyboard ()
+@interface WLDecimalKeyboard () <UIInputViewAudioFeedback>
 
 @property (weak, nonatomic) UIView<UIKeyInput> *firstResponder;
 
@@ -389,6 +389,114 @@ static UIImage *wldk_keyboard_icon()
     
 }
 
+- (NSRange)_selectedRangeInInputView:(id<UITextInput>)inputView
+{
+    UITextPosition* beginning = inputView.beginningOfDocument;
+    
+    UITextRange* selectedRange = inputView.selectedTextRange;
+    UITextPosition* selectionStart = selectedRange.start;
+    UITextPosition* selectionEnd = selectedRange.end;
+    
+    const NSInteger location = [inputView offsetFromPosition:beginning toPosition:selectionStart];
+    const NSInteger length = [inputView offsetFromPosition:selectionStart toPosition:selectionEnd];
+    
+    return NSMakeRange(location, length);
+}
+
+- (void)_playClickAudio
+{
+    [[UIDevice currentDevice] playInputClick];
+}
+
+- (void)_insert:(NSString *)text
+{
+    if ([self.firstResponder isKindOfClass:[UITextField class]]) {
+        id<UITextFieldDelegate> delegate = [(UITextField *)self.firstResponder delegate];
+        if ([delegate respondsToSelector:@selector(textField:shouldChangeCharactersInRange:replacementString:)]) {
+            NSRange range = [self _selectedRangeInInputView:(id<UITextInput>)self.firstResponder];
+            if ([delegate textField:(UITextField *)self.firstResponder shouldChangeCharactersInRange:range replacementString:text]) {
+                [self.firstResponder insertText:text];
+            }
+        }
+    }
+    else if ([self.firstResponder isKindOfClass:[UITextView class]]) {
+        id<UITextViewDelegate> delegate = [(UITextView *)self.firstResponder delegate];
+        if ([delegate respondsToSelector:@selector(textView:shouldChangeTextInRange:replacementText:)]) {
+            NSRange range = [self _selectedRangeInInputView:(id<UITextInput>)self.firstResponder];
+            if ([delegate textView:(UITextView *)self.firstResponder shouldChangeTextInRange:range replacementText:text]) {
+                [self.firstResponder insertText:text];
+            }
+        }
+    }
+    else {
+        [self.firstResponder insertText:text];
+    }
+}
+
+- (void)_clickedDot
+{
+    [self _insert:@"."];
+}
+
+- (void)_clickedDelete
+{
+    if ([self.firstResponder hasText]) {
+        [self.firstResponder deleteBackward];
+    }
+}
+
+- (void)_clickedDismiss
+{
+    [self.firstResponder resignFirstResponder];
+}
+
+- (void)_clickedSure
+{
+    [self.firstResponder resignFirstResponder];
+    !self.done ?: self.done();
+}
+
+- (void)_clickedDecimal:(int)decimal
+{
+    [self _insert:[NSString stringWithFormat:@"%d", decimal]];
+}
+
+- (void)_handleInputWithKeyboardItemTag:(NSUInteger)tag
+{
+    switch (tag) {
+        case 46:
+            [self _clickedDot];
+            break;
+            
+        case 127:
+            [self _clickedDelete];
+            break;
+            
+        case -1:
+            [self _clickedDismiss];
+            break;
+            
+        case -2:
+            [self _clickedSure];
+            break;
+            
+        case 48:
+        case 49:
+        case 50:
+        case 51:
+        case 52:
+        case 53:
+        case 54:
+        case 55:
+        case 56:
+        case 57:
+            [self _clickedDecimal:(int)tag - 48];
+            break;
+            
+        default:
+            break;
+    }
+}
 
 #pragma mark - Override
 
@@ -425,44 +533,17 @@ static UIImage *wldk_keyboard_icon()
         if (![self.firstResponder conformsToProtocol:@protocol(UIKeyInput)]) return;
     }
     
-    switch (sender.tag) {
-        case 46:
-            [self.firstResponder insertText:@"."];
-            break;
-            
-        case 127:
-            if ([self.firstResponder hasText]) {
-                [self.firstResponder deleteBackward];
-            }
-            break;
-            
-        case -1:
-            [self.firstResponder resignFirstResponder];
-            break;
-            
-        case -2:
-            [self.firstResponder resignFirstResponder];
-            !self.done ?: self.done();
-            break;
-            
-        case 48:
-        case 49:
-        case 50:
-        case 51:
-        case 52:
-        case 53:
-        case 54:
-        case 55:
-        case 56:
-        case 57:
-            [self.firstResponder insertText:[NSString stringWithFormat:@"%d", (int)sender.tag - 48]];
-            break;
-            
-        default:
-            break;
-    }
+    [self _playClickAudio];
+    [self _handleInputWithKeyboardItemTag:sender.tag];
 }
 
+
+#pragma mark - UIInputViewAudioFeedback
+
+- (BOOL)enableInputClicksWhenVisible
+{
+    return YES;
+}
 
 @end
 
