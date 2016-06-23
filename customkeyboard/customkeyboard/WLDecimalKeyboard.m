@@ -261,8 +261,6 @@ static UIImage *wldk_keyboard_icon()
 
 @implementation WLDecimalKeyboardItem
 
-
-
 - (void)setBackgroundColor:(UIColor *)backgroundColor forState:(UIControlState)state
 {
     [self setBackgroundImage:wldk_image(backgroundColor, CGSizeMake(1, 1))
@@ -554,6 +552,9 @@ static UIImage *wldk_keyboard_icon()
 - (void)deleteItemLongPress:(UILongPressGestureRecognizer *)longPress
 {
     if (longPress.state == UIGestureRecognizerStateBegan) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            ((UIButton *)[self viewWithTag:127]).highlighted = YES;
+        });
         deleteTimer = [NSTimer scheduledTimerWithTimeInterval:.1
                                                        target:self
                                                      selector:@selector(_repeatLongPressDelete)
@@ -563,6 +564,9 @@ static UIImage *wldk_keyboard_icon()
     else if (longPress.state == UIGestureRecognizerStateEnded
              || longPress.state == UIGestureRecognizerStateCancelled
              || longPress.state == UIGestureRecognizerStateFailed) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            ((UIButton *)[self viewWithTag:127]).highlighted = NO;
+        });
         [self _cleanTimer];
     }
 }
