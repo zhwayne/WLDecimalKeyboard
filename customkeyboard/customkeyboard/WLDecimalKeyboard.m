@@ -429,6 +429,8 @@ static UIImage *wldk_keyboard_icon()
             if ([delegate textField:(UITextField *)self.firstResponder shouldChangeCharactersInRange:range replacementString:text]) {
                 [self.firstResponder insertText:text];
             }
+        } else {
+            [self.firstResponder insertText:text];
         }
     }
     else if ([self.firstResponder isKindOfClass:[UITextView class]]) {
@@ -438,6 +440,8 @@ static UIImage *wldk_keyboard_icon()
             if ([delegate textView:(UITextView *)self.firstResponder shouldChangeTextInRange:range replacementText:text]) {
                 [self.firstResponder insertText:text];
             }
+        } else {
+            [self.firstResponder insertText:text];
         }
     }
     else {
